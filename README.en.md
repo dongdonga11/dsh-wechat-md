@@ -136,7 +136,7 @@ strong { color: #c0392b }   /* optional emphasis colour */
 npm test
 ```
 
-73 tests on Node's built-in `node:test` with **no test dependencies**:
+75 tests on Node's built-in `node:test` with **no test dependencies**:
 
 | File | Covers |
 |---|---|
@@ -160,6 +160,10 @@ Reproducible as of this writing:
 
 3. **The workspace pin may not take effect.**
    In one observation the running instance answered `/wechat-md/ping` with `root: D:\个人经营` while `$DSH_HOME/wechat-md-root.txt` said `D:\dongzhiAI`. Either the process predated the pin file or the pin path has a defect; not yet diagnosed. Before relying on the pin, request `/wechat-md/ping` once and check `root`.
+
+4. **Coarse mtime resolution can hide a change.**
+   Both the `unchanged` short-circuit on read and the `409` guard on save decide "did the file change?" by comparing mtime with a 1 ms tolerance. Filesystem timestamp granularity is often coarser than 1 ms (NTFS ticks are ~15 ms), so two writes inside one tick carry an identical mtime: the bytes on disk differ while the route answers `unchanged: true` and never transfers the text. In practice the editor's 2.5 s poll can keep showing stale text, and a save over an agent's same-tick rewrite is not treated as a conflict.
+   Removing it means basing change detection on a content hash instead of mtime, or comparing the byte size alongside it. Both paths are pinned by `FINDING` cases in `test/routes.test.mjs`, which skip and leave a trace on filesystems with a fine enough clock.
 
 ## Security model
 

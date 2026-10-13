@@ -9,23 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `LICENSE` (MIT), `README.md`, `README.en.md`.
-- Test suite: 73 tests on `node:test`, no test dependencies.
+- Test suite: 75 tests on `node:test`, no test dependencies.
   - `test/client.smoke.test.mjs` — module-loader contract and the slots
     `apply()` registers.
   - `test/client.unit.test.mjs` — markdown rendering, WeChat paste fixes and
     theme CSS parsing, driven through the module's own pure functions.
   - `test/routes.test.mjs` — all seven routes, optimistic concurrency, atomic
-    writes, and the path-containment guards.
+    writes, the path-containment guards, and two `FINDING` cases that pin the
+    mtime-granularity hole described below.
   - `test/helpers.mjs` — loads the browser half in a `vm` sandbox and reaches
     its internals without adding a test seam to production code.
 - `npm run check` for a syntax-only pass over both halves.
 
 ### Changed
 
-- Hardened two timing-sensitive spots in the suite: the "fresh workspace" test
-  now polls for the folders the fire-and-forget effect creates instead of
-  sleeping a fixed 20 ms, and the emphasis tests pin `currentTheme` in a
-  `beforeEach` instead of relying on an earlier test having rendered first.
+- Hardened four timing-sensitive spots found by running the suite repeatedly
+  (each was a real intermittent failure, not a theoretical one): the "fresh
+  workspace" test now polls for the folders the fire-and-forget effect creates;
+  the emphasis tests pin `currentTheme` in a `beforeEach`; and the two tests
+  that need a genuine version conflict now backdate the file's mtime with
+  `utimes` instead of assuming the rewrite lands on a different clock tick.
+  The suite has since run 20 consecutive times without a failure.
 
 ### Known issues
 
@@ -39,6 +43,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   「新建失败」.
 - The workspace pin (`DSH_WECHAT_MD_ROOT`, `$DSH_HOME/wechat-md-root.txt`) was
   observed not to take effect in a running instance. Not yet diagnosed.
+- Change detection relies on mtime with a 1 ms tolerance, but filesystem
+  timestamp granularity is often coarser (NTFS ticks are ~15 ms). Two writes
+  inside one tick therefore carry an identical mtime: a read answers
+  `unchanged` and never transfers the new text, and a stale save over another
+  writer's same-tick rewrite is accepted instead of answering `409`. Detection
+  needs a content hash, or the byte size compared alongside the mtime.
 
 ## [0.1.0] - 2026-10-05
 

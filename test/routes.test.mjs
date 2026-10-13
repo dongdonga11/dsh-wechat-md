@@ -10,7 +10,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { boot, makeOutsideFile, makeWorkspace, mkdir, writeFile } from './routes.harness.mjs'
+import { boot, makeOutsideFile, makeWorkspace, mkdir, utimes, writeFile } from './routes.harness.mjs'
 
 const EXPECTED_ROUTES = [
   '/wechat-md/ping',
@@ -143,14 +143,63 @@ test('GET article with a matching mtime answers "unchanged" and sends no text', 
 test('GET article with a stale mtime returns the fresh text', async () => {
   const workspace = await makeWorkspace()
   const app = await boot({ workspace })
+  const path = app.join('运营/articles/01_正文_示例.md')
   const file = encodeURIComponent('01_正文_示例.md')
 
   const first = await app.req('GET', `/wechat-md/article?file=${file}`)
-  await writeFile(app.join('运营/articles/01_正文_示例.md'), '# 示例\n\n改过了。\n', 'utf8')
+  await writeFile(path, '# 示例\n\n改过了。\n', 'utf8')
+
+  // The change probe compares timestamps with a 1 ms tolerance, so a rewrite
+  // that lands on the same clock tick as the read would look "unchanged" and
+  // the assertion below would fail for a reason that has nothing to do with the
+  // route. Backdating the known mtime makes the staleness real and the test
+  // deterministic. The tick-granularity risk itself is covered by the
+  // "identical mtime" test right after this one.
+  const { utimes } = await import('node:fs/promises')
+  const stale = (first.body.mtime - 60_000) / 1000
+  await utimes(path, stale, stale)
 
   const again = await app.req('GET', `/wechat-md/article?file=${file}&mtime=${first.body.mtime}`)
   assert.equal(again.body.unchanged, undefined)
   assert.ok(again.body.text.includes('改过了'), 'a changed file must be transferred')
+})
+
+test('FINDING: content edited within the same mtime tick reads as "unchanged"', async () => {
+  const workspace = await makeWorkspace()
+  const app = await boot({ workspace })
+  const path = app.join('运营/articles/01_正文_示例.md')
+  const file = encodeURIComponent('01_正文_示例.md')
+
+  const first = await app.req('GET', `/wechat-md/article?file=${file}`)
+  await writeFile(path, '# 示例\n\n改成完全不同的内容。\n', 'utf8')
+
+  // Does this filesystem expose enough mtime resolution to see the rewrite?
+  const { stat } = await import('node:fs/promises')
+  const after = await stat(path)
+  if (after.mtimeMs !== first.body.mtime) {
+    // A fine-grained clock: the route sees the change and the property below is
+    // not observable here. Recorded so the assertion never silently drifts.
+    assert.ok(after.mtimeMs > first.body.mtime, 'a rewrite should advance the mtime')
+    return
+  }
+
+  // A coarse clock (NTFS ticks are ~15 ms on Windows). The bytes on disk are
+  // different but the timestamp is identical, so the probe answers "unchanged"
+  // and the text is not transferred. Two consequences worth knowing:
+  //   * the editor's 2.5 s poll can keep showing stale text, and
+  //   * `saveArticle`'s optimistic-concurrency guard compares the same way, so
+  //     a save over an agent's same-tick rewrite is allowed through.
+  // Detection therefore cannot rely on mtime alone — a content hash, or the
+  // byte size, would be needed.
+  const probe = await app.req('GET', `/wechat-md/article?file=${file}&mtime=${first.body.mtime}`)
+  assert.equal(probe.body.unchanged, true, 'identical mtime is read as unchanged')
+  assert.equal(probe.body.text, undefined, 'and the fresh text is never sent')
+
+  const { readFile } = await import('node:fs/promises')
+  assert.ok(
+    (await readFile(path, 'utf8')).includes('完全不同的内容'),
+    'even though the file on disk really did change',
+  )
 })
 
 test('GET article on a missing file answers 404 rather than throwing', async () => {
@@ -183,10 +232,19 @@ test('POST article writes the file through an atomic replace', async () => {
 test('POST article refuses to clobber a version someone else wrote', async () => {
   const app = await boot({ workspace: await makeWorkspace() })
   const file = '01_正文_示例.md'
+  const path = app.join('运营/articles', file)
 
   const read = await app.req('GET', `/wechat-md/article?file=${encodeURIComponent(file)}`)
   // The chat agent edits the same file between the editor's read and its save.
-  await writeFile(app.join('运营/articles', file), '# 示例\n\nAI 改过的版本。\n', 'utf8')
+  await writeFile(path, '# 示例\n\nAI 改过的版本。\n', 'utf8')
+
+  // The guard compares the caller's mtime with the file's, and it compares with
+  // a 1 ms tolerance — so a rewrite landing on the same clock tick as the read
+  // would let the stale save through (see the "same mtime tick" tests). The
+  // agent's write is backdated to make the conflict unambiguous and the test
+  // deterministic; the tick-granularity hole itself is pinned separately.
+  const stale = (read.body.mtime - 60_000) / 1000
+  await utimes(path, stale, stale)
 
   const save = await app.req('POST', '/wechat-md/article', {
     file,
@@ -201,6 +259,33 @@ test('POST article refuses to clobber a version someone else wrote', async () =>
     (await app.disk('运营/articles/01_正文_示例.md')).includes('AI 改过的版本'),
     'the other writer\u2019s content must survive',
   )
+})
+
+test('FINDING: a stale save is accepted when the rewrite shares the read\u2019s mtime tick', async () => {
+  const app = await boot({ workspace: await makeWorkspace() })
+  const file = '01_正文_示例.md'
+  const path = app.join('运营/articles', file)
+
+  const read = await app.req('GET', `/wechat-md/article?file=${encodeURIComponent(file)}`)
+  await writeFile(path, '# 示例\n\nAI 改过的版本，长度刻意不同。\n', 'utf8')
+
+  const { stat } = await import('node:fs/promises')
+  if ((await stat(path)).mtimeMs !== read.body.mtime) {
+    // Fine-grained clock: the guard sees the change here, so this hole is not
+    // observable on this filesystem. Recorded so the assertion cannot drift.
+    return
+  }
+
+  const save = await app.req('POST', '/wechat-md/article', {
+    file,
+    text: '# 示例\n\n编辑器里的旧版本。\n',
+    mtime: read.body.mtime,
+  })
+
+  // Same tick plus a different byte length is the realistic case: the agent
+  // (or any other writer) rewrote the file while the editor had it open.
+  assert.equal(save.status, 200, 'identical mtime is treated as "no conflict"')
+  assert.ok((await app.disk('运营/articles/01_正文_示例.md')).includes('编辑器里的旧版本'))
 })
 
 test('POST article with no mtime writes regardless (explicit overwrite wins)', async () => {

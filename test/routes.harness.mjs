@@ -10,7 +10,7 @@
  * exists on this machine.
  */
 
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, utimes, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { IncomingMessage } from 'node:http'
 import { Socket } from 'node:net'
@@ -162,4 +162,4 @@ export async function makeOutsideFile() {
   return { dir, file }
 }
 
-export { mkdir, mkdtemp, writeFile }
+export { mkdir, mkdtemp, utimes, writeFile }
