@@ -1,0 +1,11 @@
+# Normalise line endings: the source files are LF and must stay LF, otherwise a
+# clone on Windows rewrites every file and buries real diffs.
+* text=auto eol=lf
+
+# Binary assets, should any be added later.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
