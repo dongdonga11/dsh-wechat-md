@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "WeChat Official Account (公众号) markdown editor as a DSH right-sidebar tab, sharing the article .md files with the chat agent.",
   "license": "MIT",
-  "author": "dsh-wechat-md contributors",
+  "author": "haodong <81413790+dongdonga11@users.noreply.github.com>",
   "type": "module",
   "main": "lib/index.js",
   "engines": {
@@ -17,6 +17,14 @@
     "markdown",
     "editor"
   ],
+  "homepage": "https://github.com/dongdonga11/dsh-wechat-md#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dongdonga11/dsh-wechat-md.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dongdonga11/dsh-wechat-md/issues"
+  },
   "exports": {
     ".": {
       "default": "./lib/index.js"
