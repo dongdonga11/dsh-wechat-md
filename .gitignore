@@ -1,0 +1,13 @@
+# 依赖与构建产物
+node_modules/
+*.tmp
+
+# 编辑器/系统产生的杂项
+*.log
+.DS_Store
+Thumbs.db
+
+# 本地临时备份：历史版本请走 git，不要再落成文件
+*.bak
+*.bak[0-9]
+*.orig
