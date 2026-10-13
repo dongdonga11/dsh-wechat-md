@@ -1,0 +1,6 @@
+# Bundle patch for dsh-wechat-md: one Loader row inserting the plugin over the
+# profile root. The package's `main` (lib/index.js) is the node half; its
+# `dsh.client` declaration ships the browser half through `exports["./client"]`.
+- insert:
+    - id: wechat-md
+      name: dsh-wechat-md
