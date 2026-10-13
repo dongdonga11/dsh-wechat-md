@@ -55,5 +55,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "send to AI" into the session, and a 2.5-second disk poll with optimistic
   concurrency on save.
 
-[Unreleased]: https://github.com/OWNER/dsh-wechat-md/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/OWNER/dsh-wechat-md/releases/tag/v0.1.0
+[Unreleased]: https://github.com/dongdonga11/dsh-wechat-md/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/dongdonga11/dsh-wechat-md/releases/tag/v0.1.0
