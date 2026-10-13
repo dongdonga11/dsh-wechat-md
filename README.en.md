@@ -146,7 +146,15 @@ npm test
 
 `lib/client.js` is an IIFE with no exports and, deliberately, **no test seam**. `test/helpers.mjs` reaches its internal pure functions by slicing declarations out of the source and evaluating them — production code is untouched and no behaviour is re-implemented in the test.
 
-`--test-isolation=none` is there because the default per-file child processes need stdio pipes, which a confined sandbox forbids. Dropping the flag works in an ordinary environment.
+`npm test` runs `test/run.mjs` rather than `node --test` directly, because the option that puts every file in one process is spelled differently across Node versions — and Node 20 has no such option at all:
+
+| Version | Single-process option |
+|---|---|
+| Node 20 | **none** (the runner falls back to the default per-file isolation) |
+| Node 22.8+ | `--experimental-test-isolation=none` |
+| Node 23+ / 24 | `--test-isolation=none` |
+
+The runner picks the spelling the runtime advertises and falls back to a plain `node --test` when there is none. Verified at 75/75 on Node 20.20.2, 22.14.0 and 24.18.0. CI does not need the flag (no sandbox restriction); it is only there so a confined local sandbox can run the suite.
 
 ## Known limitations
 

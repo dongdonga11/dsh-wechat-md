@@ -43,7 +43,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test --test-isolation=none --test-timeout=30000 test/client.smoke.test.mjs test/client.unit.test.mjs test/routes.test.mjs",
+    "test": "node test/run.mjs",
+    "test:isolation-none": "node --test --test-isolation=none --test-timeout=30000 test/client.smoke.test.mjs test/client.unit.test.mjs test/routes.test.mjs",
     "check": "node --check lib/index.js && node --check lib/client.js"
   },
   "dsh": {

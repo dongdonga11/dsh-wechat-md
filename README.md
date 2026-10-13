@@ -192,7 +192,15 @@ npm test
 两点说明：
 
 - `lib/client.js` 是一个 IIFE，没有导出、也**没有为测试留钩子**。测试通过 `test/helpers.mjs` 从源码里按声明切片再求值来拿到内部纯函数，不修改生产代码，也不在测试里重写一份逻辑。
-- `--test-isolation=none` 是为了在受限沙箱里运行（默认的 per-file 子进程需要管道，受限环境下不可用）。在普通环境里去掉这个参数也能跑。
+- `npm test` 走的是 `test/run.mjs`，不是直接 `node --test`。原因是"把所有测试放进一个进程"所需的选项在 Node 各版本拼写不同，而且 Node 20 根本没有：
+
+  | 版本 | 单进程选项 |
+  |---|---|
+  | Node 20 | **没有**（runner 自动退回默认的多进程隔离） |
+  | Node 22.8+ | `--experimental-test-isolation=none` |
+  | Node 23+ / 24 | `--test-isolation=none` |
+
+  runner 会按运行时能力选拼写，选不到就退回不带该 flag 的 `node --test`。已验证 Node 20.20.2 / 22.14.0 / 24.18.0 三个版本均 **75/75 通过**。CI 上不需要这个 flag（不受沙箱限制）；本地加上它只是为了让受限沙箱能跑。
 
 ## 已知限制
 

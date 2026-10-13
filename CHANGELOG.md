@@ -20,6 +20,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `test/helpers.mjs` — loads the browser half in a `vm` sandbox and reaches
     its internals without adding a test seam to production code.
 - `npm run check` for a syntax-only pass over both halves.
+- `test/run.mjs`, the cross-platform test entry point. It exists because the
+  option that runs every file in one process is not portable: Node 20 has no
+  such option, Node 22.8+ spells it `--experimental-test-isolation=none`, and
+  Node 23+/24 spell it `--test-isolation=none`. The runner picks the spelling
+  the runtime advertises and falls back to a plain `node --test` otherwise.
+
+### Fixed
+
+- `npm test` no longer hardcodes `--test-isolation=none`, which Node 20 rejects
+  outright (`node: bad option`) and Node 22 rejects under that name. The
+  package claims `engines: node >= 20`, and CI proved the claim false on the
+  first run — Node 24 passed while Node 20 and 22 both failed before running a
+  single test. Verified at 75/75 on Node 20.20.2, 22.14.0 and 24.18.0.
 
 ### Changed
 
