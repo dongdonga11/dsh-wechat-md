@@ -51,8 +51,15 @@ test('a fresh workspace gets its article and theme folders created', async () =>
   const empty = await mkdtemp(join(tmpdir(), 'wechat-md-fresh-'))
 
   const app = await boot({ workspace: empty })
-  // The effect is fire-and-forget; let its mkdir calls settle.
-  await new Promise((resolve) => setTimeout(resolve, 20))
+
+  // The effect is fire-and-forget, so the folders appear asynchronously. Polling
+  // for the condition rather than sleeping a fixed 20 ms: on a loaded machine a
+  // fixed delay is a coin flip, and a flaky test in a brand-new suite is worse
+  // than no test at all.
+  const deadline = Date.now() + 5000
+  while (Date.now() < deadline && !(app.exists('运营/articles') && app.exists('运营/themes'))) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
 
   assert.ok(app.exists('运营/articles'), 'the default article folder must be created')
   assert.ok(app.exists('运营/themes'), 'the default theme folder must be created')

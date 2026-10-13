@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     its internals without adding a test seam to production code.
 - `npm run check` for a syntax-only pass over both halves.
 
+### Changed
+
+- Hardened two timing-sensitive spots in the suite: the "fresh workspace" test
+  now polls for the folders the fire-and-forget effect creates instead of
+  sleeping a fixed 20 ms, and the emphasis tests pin `currentTheme` in a
+  `beforeEach` instead of relying on an earlier test having rendered first.
+
 ### Known issues
 
 - Paragraphs, code blocks and the inner paragraphs of blockquotes declare no

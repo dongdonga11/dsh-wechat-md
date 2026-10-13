@@ -12,12 +12,19 @@
  */
 
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test, { beforeEach } from 'node:test'
 
 import { loadPrivates } from './helpers.mjs'
 
 const { fns } = loadPrivates()
 const { renderInline, renderWeChat, blockify, parseThemeCss, wechatify, style } = fns
+
+// `renderInline` reads the module-level `currentTheme` that `renderWeChat`
+// assigns, so without this the emphasis tests would depend on some earlier test
+// having rendered first. Pinning it here keeps every test order-independent.
+beforeEach(() => {
+  renderWeChat('', 'simple')
+})
 
 // ---------------------------------------------------------------------------
 // inline rendering
