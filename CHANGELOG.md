@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `![alt](<path>)` no longer produces a broken image. Markdown allows the URL
+  to be wrapped in angle brackets, and that spelling is what the workspace's
+  article files use. `escapeHtml` runs before the inline pass, so the brackets
+  arrived as `&lt;`/`&gt;` and the greedy `src` group swallowed them, emitting
+  `src="&lt;assets/x.png&gt;"` — an image no browser can load. Both the image
+  and link handlers now unwrap that form. Two regression tests cover it, and
+  the fix restores previews for the articles already written that way.
 - `npm test` no longer hardcodes `--test-isolation=none`, which Node 20 rejects
   outright (`node: bad option`) and Node 22 rejects under that name. The
   package claims `engines: node >= 20`, and CI proved the claim false on the

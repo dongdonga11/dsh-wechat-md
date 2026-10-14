@@ -57,6 +57,27 @@ test('images get max-width and keep their alt text', () => {
   assert.ok(html.includes('max-width:100%'), 'images must be width-capped')
 })
 
+test('an angle-bracket image URL does not leak its brackets into src', () => {
+  // Markdown permits `![alt](<path>)`, and that spelling is common in this
+  // workspace. escapeHtml runs first, so the brackets arrive as entities and
+  // the greedy src group used to swallow them — yielding
+  // src="&lt;path&gt;", which no browser can load. Regression test for that.
+  const html = renderInline('![说明](<assets/01_侧边栏入口_公众号排版标签.png>)')
+  const src = /src="([^"]*)"/u.exec(html)?.[1]
+  assert.equal(
+    src,
+    'assets/01_侧边栏入口_公众号排版标签.png',
+    `brackets must not survive, got: ${src}`,
+  )
+  assert.ok(!html.includes('&lt;assets'), 'no escaped bracket may remain in src')
+})
+
+test('an angle-bracket link URL does not leak its brackets into href', () => {
+  const html = renderInline('[文档](<https://example.com/a>)')
+  const href = /href="([^"]*)"/u.exec(html)?.[1]
+  assert.equal(href, 'https://example.com/a', `brackets must not survive, got: ${href}`)
+})
+
 test('links become inline-styled anchors in the WeChat link colour', () => {
   const html = renderInline('[文档](https://example.com/a)')
   assert.ok(html.includes('href="https://example.com/a"'))
