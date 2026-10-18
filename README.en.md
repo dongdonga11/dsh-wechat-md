@@ -14,6 +14,7 @@ The Official Account composer does not accept markdown, and it drops `<style>` b
 - **Copy to 公众号** inlines every declaration onto its element and writes rich HTML to the clipboard, so the paste keeps its styling
 - **The article is an ordinary `.md` file.** The agent edits the same file with its ordinary file tools; the editor polls every 2.5s and reloads
 - **Send to AI** hands the current file path plus your instruction to the session
+- **The editor brings itself up after the agent edits it.** Its body keeps polling even while the sidebar is collapsed, so an external edit to the article it holds — exactly what an agent rewrite looks like — opens the right sidebar and focuses that article. No manual panel-hunting, no re-picking the file
 
 Because the `.md` file is the single source of truth, the editor, the agent, and your own edits cannot diverge.
 
@@ -26,8 +27,23 @@ Because the `.md` file is the single source of truth, the editor, the agent, and
 | Three built-in themes | `classic` (blue, auto-numbers h2 as 一、二、三), `grace` (green), `simple` (grey) |
 | Custom themes | Drop a `*.css` in the theme folder; the same name replaces a built-in outright |
 | Switchable folders | Pick the article folder from the toolbar; the choice is stored per workspace |
+| Summon it without clicking | Clickable guide card, `Ctrl/Cmd+Shift+M`, or auto-reveal after an agent rewrite (toggleable) |
+| Newest draft by default | The editor opens the most recently edited article, not the first one alphabetically |
 | Optimistic concurrency | A save carries the mtime it read; if the agent rewrote the file the route answers `409` instead of clobbering |
 | Containment | Every read and write is confined to the workspace; the image route is extension-allowlisted |
+
+### How to get it on screen
+
+| Way | Action |
+|---|---|
+| Guide card | Click the 「公众号排版」 card in the Start panel |
+| Shortcut | `Ctrl/Cmd + Shift + M` |
+| Auto-reveal | Ask the agent to revise the open draft; the editor appears once the file changes |
+| Manual | The 「公众号排版」 tab in the right sidebar's tab strip |
+
+Auto-reveal only fires for **external** edits — never on first load, never for your own save,
+and never while the editor is already on screen. Turn it off with the toolbar toggle
+`AI 改稿:自动弹出`; the choice is remembered.
 
 ## Requirements
 
