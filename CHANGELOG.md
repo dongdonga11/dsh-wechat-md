@@ -8,12 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The editor brings itself up when the agent edits the open article.** The tab
+  is registered with `keepMounted`, so its body keeps polling for disk changes
+  even after the sidebar is collapsed. When that poll sees an *external* edit to
+  the article it holds — which is what happens when you ask the AI in chat to
+  revise the draft — it calls `ctx.sidebarRight.openTab` + `ctx.layout.openRightbar`
+  and focuses that article. No more hunting for the panel and re-picking the file.
+  A toolbar toggle (`AI 改稿:自动弹出`) turns the behaviour off and the choice
+  persists in `localStorage`; it never fires for the first load, for the user's
+  own saves, or while the editor is already on screen.
+- **The guide card is clickable.** `guide[].commandId` now points at a real
+  registered shortcut (`wechat-md.open`, `Ctrl/Cmd+Shift+M`), which is what the
+  sidebar-right guide body resolves to decide whether a card does anything. The
+  command resolves the current target through `sidebarRight.commandTarget` and
+  opens this tab via `openTabFromTarget`, falling back to `openTab` on hosts that
+  predate it.
+- **Opening the editor selects the most recently edited article**, not the first
+  one alphabetically.
 - `LICENSE` (MIT), `README.md`, `README.en.md`.
-- Test suite: 75 tests on `node:test`, no test dependencies.
-  - `test/client.smoke.test.mjs` — module-loader contract and the slots
-    `apply()` registers.
+- Test suite: 85 tests on `node:test`, no test dependencies.
+  - `test/client.smoke.test.mjs` — module-loader contract, the slots `apply()`
+    registers, and the guide-card → command → resolve chain.
   - `test/client.unit.test.mjs` — markdown rendering, WeChat paste fixes and
     theme CSS parsing, driven through the module's own pure functions.
+  - `test/client.auto-reveal.test.mjs` — the reveal behaviour above, driven
+    through a real `createEditor` with fake DOM doubles, a programmable backend
+    and a manually fired poll timer.
   - `test/routes.test.mjs` — all seven routes, optimistic concurrency, atomic
     writes, the path-containment guards, and two `FINDING` cases that pin the
     mtime-granularity hole described below.

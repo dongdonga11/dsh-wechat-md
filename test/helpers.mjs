@@ -153,9 +153,12 @@ export function makeDocumentStub() {
  *
  * `CN_NUM` and `THEMES` are data, not behaviour, but they must come along:
  * `renderWeChat` closes over both, and leaving them out would silently fall
- * back to an undefined theme instead of failing loudly. `createEditor` is
- * deliberately absent — it needs a DOM, and the interactions it owns are not
- * what a regression here usually breaks.
+ * back to an undefined theme instead of failing loudly.
+ *
+ * `createEditor` is included because the editor's own behaviour is now part of
+ * the contract: it reveals the sidebar when the agent edits the open article,
+ * and that decision lives inside this closure. The DOM doubles in this module
+ * are enough to drive it.
  */
 const EXTRACTABLE = [
   'CN_NUM',
@@ -167,6 +170,9 @@ const EXTRACTABLE = [
   'parseThemeCss',
   'renderWeChat',
   'wechatify',
+  'api',
+  'baseName',
+  'createEditor',
 ]
 
 const DECLARATION = {
@@ -179,6 +185,9 @@ const DECLARATION = {
   parseThemeCss: /^ {4}function parseThemeCss\(/mu,
   renderWeChat: /^ {4}function renderWeChat\(/mu,
   wechatify: /^ {4}function wechatify\(/mu,
+  api: /^ {4}const api = /mu,
+  baseName: /^ {4}const baseName = /mu,
+  createEditor: /^ {4}function createEditor\(/mu,
 }
 
 /**
