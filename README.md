@@ -54,14 +54,54 @@
 
 ## 安装
 
-在 DSH profile 目录（例如 `~/.dsh/profiles/desktop`）里：
+### 一条命令（推荐）
 
-**1. 加依赖**（本地开发用 `link:`，发布后可用版本号）
+```bash
+dsh plugin --profile desktop add github:dongdonga11/dsh-wechat-md
+```
+
+就这一条。它会做三件事：
+
+1. 把插件装进 `desktop` 这个 profile
+2. **自动把它注册进该 profile 的 `dsh.profile.bundles`**——不需要手改任何配置文件
+3. 下次启动 DSH，右侧栏就多出一个「公众号排版」标签
+
+> 没有发布到 npm，所以用 `github:` 简写而不是包名。这样会走内部的 `npm pack`，
+> 只装 `package.json` 的 `files` 白名单里的文件（7 个，约 32KB），不会把仓库里的
+> 历史备份等杂项一起拉下来——所以**不要**改用 GitHub 的 tar.gz 直链。
+
+安装完成后重启 DSH，然后确认插件活着：
+
+```bash
+curl http://127.0.0.1:19387/wechat-md/ping
+# {"ok":true,"plugin":"dsh-wechat-md","root":"D:\\你的工作区"}
+```
+
+看到 `{"ok":true,...}` 就成了。
+
+### 装到哪个 profile
+
+**必须装在有右侧栏 UI 的 profile 里**（桌面版默认就是）。装到一个没有右侧栏的
+profile 时，插件进程起不来，启动日志里会看到：
+
+```
+web boot: 1 entry did not activate
+dsh-wechat-md: pending (waiting for services: sidebarRight, sidebarRightTabs)
+```
+
+翻译成人话：它一直在等"右侧栏"这个服务，而那个 profile 里根本没有右侧栏。
+所以撞到 `waiting for services` 时，先看你的 profile 有没有右侧栏，而不是怀疑插件坏了。
+
+### 手动安装（一般不需要）
+
+想手工维护依赖时，在 DSH profile 目录（例如 `~/.dsh/profiles/desktop`）里：
+
+**1. 加依赖**
 
 ```json
 {
   "dependencies": {
-    "dsh-wechat-md": "link:D:/path/to/dsh-wechat-md"
+    "dsh-wechat-md": "github:dongdonga11/dsh-wechat-md"
   },
   "dsh": {
     "profile": {
@@ -71,6 +111,8 @@
 }
 ```
 
+本地调试插件本身时，依赖可以指到工作副本：`"dsh-wechat-md": "link:D:/path/to/dsh-wechat-md"`。
+
 **2. 装依赖**
 
 ```bash
@@ -78,13 +120,6 @@ pnpm install
 ```
 
 **3. 重启 DSH**，右侧栏会出现「公众号排版」标签页。
-
-确认插件活着：
-
-```bash
-curl http://127.0.0.1:19387/wechat-md/ping
-# {"ok":true,"plugin":"dsh-wechat-md","root":"D:\\你的工作区"}
-```
 
 `cordis.patch.yml` 里的 loader 行由包自身的 `dsh.bundle.patch` 声明，不需要手写：
 

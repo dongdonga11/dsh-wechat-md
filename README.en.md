@@ -55,12 +55,54 @@ and never while the editor is already on screen. Turn it off with the toolbar to
 
 ## Install
 
-In a DSH profile directory (e.g. `~/.dsh/profiles/desktop`):
+### One command (recommended)
+
+```bash
+dsh plugin --profile desktop add github:dongdonga11/dsh-wechat-md
+```
+
+That is the whole install. It does three things:
+
+1. installs the plugin into the `desktop` profile
+2. **registers it in that profile's `dsh.profile.bundles` for you** — no config file to hand-edit
+3. on the next DSH start, a 「公众号排版」 tab appears in the right sidebar
+
+> The package is not on npm, hence the `github:` shorthand rather than a package name.
+> That shorthand goes through `npm pack` and therefore installs only the files listed in
+> `package.json#files` (7 files, ~32KB) — a raw GitHub tar.gz URL would drag in the repo's
+> historical backups too, so don't substitute one.
+
+Restart DSH afterwards, then confirm it is alive:
+
+```bash
+curl http://127.0.0.1:19387/wechat-md/ping
+# {"ok":true,"plugin":"dsh-wechat-md","root":"D:\\your-workspace"}
+```
+
+`{"ok":true,...}` means it is up.
+
+### Which profile
+
+**Install it into a profile that has the right-sidebar UI** (the desktop profile does).
+Installed into a profile without one, the plugin never activates and the startup log says:
+
+```
+web boot: 1 entry did not activate
+dsh-wechat-md: pending (waiting for services: sidebarRight, sidebarRightTabs)
+```
+
+In plain words: it is waiting for a "right sidebar" service that the profile does not
+provide. If you hit `waiting for services`, check the profile rather than suspecting the
+plugin.
+
+### Manual install (rarely needed)
+
+To manage the dependency by hand, in a DSH profile directory (e.g. `~/.dsh/profiles/desktop`):
 
 ```json
 {
   "dependencies": {
-    "dsh-wechat-md": "link:D:/path/to/dsh-wechat-md"
+    "dsh-wechat-md": "github:dongdonga11/dsh-wechat-md"
   },
   "dsh": {
     "profile": {
@@ -70,16 +112,14 @@ In a DSH profile directory (e.g. `~/.dsh/profiles/desktop`):
 }
 ```
 
+For local development point the dependency at the working copy instead:
+`"dsh-wechat-md": "link:D:/path/to/dsh-wechat-md"`.
+
 ```bash
 pnpm install
 ```
 
-Restart DSH; a 「公众号排版」 tab appears in the right sidebar. Confirm it is alive:
-
-```bash
-curl http://127.0.0.1:19387/wechat-md/ping
-# {"ok":true,"plugin":"dsh-wechat-md","root":"D:\\your-workspace"}
-```
+Restart DSH; a 「公众号排版」 tab appears in the right sidebar.
 
 The loader row is declared by the package itself (`dsh.bundle.patch`), so no hand-editing of `cordis.patch.yml` is needed.
 
